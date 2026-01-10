@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+dist
+build
+coverage
+public
+*.min.js
+*.log
+package-lock.json
+yarn.lock
+.turbo
+.vercel
+.env
+.env.*
+.vscode
