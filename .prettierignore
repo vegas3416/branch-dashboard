@@ -1,5 +1,15 @@
 node_modules
 .next
+dist
+build
+out
+coverage
+public
+*.min.js
+.DS_Store
+*.lock
+node_modules
+.next
 out
 dist
 build

@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <nav className="p-3 space-y-1">
-            {navItems.map((item) => {
+            {navItems.map(item => {
               const isActive =
                 pathname === item.href || (item.href === '/overview' && pathname === '/');
 
@@ -76,7 +76,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 Last 30 days
               </button>
 
-              <button className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-gray-50">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!confirm('Log out?')) return;
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  window.location.href = '/';
+                }}
+                className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-gray-50"
+              >
                 Jason
               </button>
             </div>

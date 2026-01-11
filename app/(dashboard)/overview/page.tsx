@@ -102,7 +102,7 @@ export default function OverviewPage() {
               </tr>
             </thead>
             <tbody>
-              {channelRows.map((r) => (
+              {channelRows.map(r => (
                 <tr key={r.channel} className="border-t">
                   <td className="py-2 pr-4 font-medium text-gray-900">{r.channel}</td>
                   <td className="py-2 pr-4 text-gray-700">{r.clicks.toLocaleString()}</td>

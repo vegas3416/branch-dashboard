@@ -1,11 +1,24 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.fixAll.eslint": true
+  },
+  "prettier.requireConfig": true,
+
+  "editor.bracketPairColorization.enabled": false,
+  "editor.guides.bracketPairs": false,
+  "editor.guides.bracketPairsHorizontal": false,
+  "editor.guides.indentation": false,
+
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": true
+
+  "workbench.colorCustomizations": {
+    "editor.background": "#2b2b2b"
   },
+
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },

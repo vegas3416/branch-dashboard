@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+//shadcn components
+import { Button } from '@/components/ui/button';
+
 type LinkRow = {
   id: string;
   name: string;
@@ -57,10 +60,10 @@ export default function LinksPage() {
     const q = query.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter(
-      (r) =>
+      r =>
         r.name.toLowerCase().includes(q) ||
         r.shortUrl.toLowerCase().includes(q) ||
-        r.destination.toLowerCase().includes(q),
+        r.destination.toLowerCase().includes(q)
     );
   }, [rows, query]);
 
@@ -71,7 +74,7 @@ export default function LinksPage() {
         acc.installs += r.installs;
         return acc;
       },
-      { clicks: 0, installs: 0 },
+      { clicks: 0, installs: 0 }
     );
   }, [filtered]);
 
@@ -85,10 +88,6 @@ export default function LinksPage() {
             Create deep links and track performance across channels
           </div>
         </div>
-
-        <button className="rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-white hover:bg-blue-600">
-          Create link
-        </button>
 
         <button
           onClick={() => setIsCreateOpen(true)}
@@ -111,7 +110,7 @@ export default function LinksPage() {
             className="w-full md:w-80 rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
             placeholder="Search by name, short link, destination…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
           />
           <button className="rounded-lg border bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
             Filters
@@ -140,7 +139,7 @@ export default function LinksPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {filtered.map(r => (
                 <tr key={r.id} className="border-b last:border-b-0">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{r.name}</div>
@@ -187,8 +186,8 @@ export default function LinksPage() {
       {isCreateOpen && (
         <CreateLinkModal
           onClose={() => setIsCreateOpen(false)}
-          onCreate={(newRow) => {
-            setRows((prev) => [newRow, ...prev]);
+          onCreate={newRow => {
+            setRows(prev => [newRow, ...prev]);
             setIsCreateOpen(false);
           }}
         />
@@ -228,13 +227,19 @@ function CreateLinkModal({
   const canCreate = name.trim().length > 0 && destination.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-2xl border bg-white p-5">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-2xl border bg-white p-5"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold text-gray-900">Create link</div>
           <button
             onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded-lg px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
           >
             ✕
           </button>
@@ -257,20 +262,14 @@ function CreateLinkModal({
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
-          <button
+          <Button
+            className=" rounded-lg border bg-white px-3 py-2 text-sm text-gray-700 cursor-pointer"
+            variant="outline"
+            type="button"
             onClick={onClose}
-            className=" rounded-lg border
-    bg-white
-    px-3 py-2
-    text-sm
-    text-gray-700
-    transition-colors
-    !hover:bg-red-600
-    hover:text-white
-    active:scale-[0.98] cursor-pointer"
           >
             Cancel
-          </button>
+          </Button>
 
           <button
             disabled={!canCreate}
@@ -291,8 +290,8 @@ function CreateLinkModal({
             className={[
               'rounded-lg px-3 py-2 text-sm font-medium',
               canCreate
-                ? 'bg-black text-white hover:bg-black/90'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed',
+                ? 'bg-black text-white hover:bg-black/90 cursor-pointer'
+                : 'bg-gray-100 text-gray-600 cursor-not-allowed',
             ].join(' ')}
           >
             Create
@@ -320,11 +319,11 @@ function Field({
 }) {
   return (
     <label className="block">
-      <div className="mb-1 text-sm text-gray-600">{label}</div>
+      <div className="mb-1 text-sm text-black">{label}</div>
       <input
-        className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
+        className="w-full rounded-lg border border-black bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/10 placeholder:text-gray-200"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
       />
     </label>
@@ -333,7 +332,7 @@ function Field({
 
 function formatDate(isoDate: string) {
   // isoDate: YYYY-MM-DD
-  const [y, m, d] = isoDate.split('-').map((v) => Number(v));
+  const [y, m, d] = isoDate.split('-').map(v => Number(v));
   const dt = new Date(y, m - 1, d);
   return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
