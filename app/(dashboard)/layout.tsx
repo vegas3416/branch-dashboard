@@ -1,12 +1,15 @@
 // app/(dashboard)/layout.tsx
-import Link from 'next/link';
+
 import { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { LogoutButton } from '@/components/LogoutButton';
+import { SidebarNav } from '@/components/SidebarNav';
+import Image from 'next/image';
+import Link from 'next/link';
 
 const navItems = [
-  { href: '/', label: 'Overview' },
+  { href: '/overview', label: 'Overview' },
   { href: '/links', label: 'Links' },
   { href: '/campaigns', label: 'Campaigns' },
   { href: '/analytics', label: 'Analytics' },
@@ -42,21 +45,19 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           {/* Sidebar */}
           <aside className="w-64 border-r bg-sidebar">
             <div className="h-14 px-4 flex items-center border-b dark:border-gray-800">
-              <div className="font-semibold">Branch Dashboard</div>
+              <Link href="/overview" className="flex items-center gap-2">
+                <Image
+                  src="/branch/branch.svg"
+                  alt="Branch"
+                  width={120}
+                  height={28}
+                  className="invert-0 dark:invert opacity-90 hover:opacity-100 transition"
+                />
+                {/* Optional text label */}
+              </Link>
             </div>
 
-            <nav className="p-3 space-y-1">
-              {navItems.map(item => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100
-                             dark:text-gray-200 dark:hover:bg-gray-800"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <SidebarNav items={navItems} />
 
             <div className="mt-auto p-3">
               <div
@@ -93,13 +94,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                     placeholder="Search links, campaigns…"
                   />
                 </div>
-
-                <button
-                  className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-gray-50
-                                   dark:bg-gray-900 dark:border-gray-800 dark:hover:bg-gray-800"
-                >
-                  Last 30 days
-                </button>
 
                 <LogoutButton />
               </div>
