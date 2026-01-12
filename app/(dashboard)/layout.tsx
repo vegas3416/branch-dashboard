@@ -8,17 +8,34 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ProfileMenu from '@/components/ProfileMenu';
 
+// Demo-mode user + settings (no DB)
+const DEMO_USER = {
+  id: 'demo',
+  email: 'demo@branch.io',
+  name: 'Demo User',
+  settings: {
+    theme: 'light' as const, // change to "dark" if you want default dark
+  },
+};
+
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const demoMode = process.env.DEMO_MODE === 'true';
+
+  // Only import Prisma when NOT in demo mode
+  const prisma = demoMode ? null : (await import('@/lib/prisma')).prisma;
+
   // Next.js cookies() is async in newer App Router builds
   const cookieStore = await cookies();
   const session = cookieStore.get('session')?.value;
 
-  // Middleware already blocks unauthenticated users, but keep it safe
-  const email = session ? 'demo@branch.io' : null;
+  // In demo mode, always use the demo user. Otherwise rely on session.
+  const email = demoMode ? DEMO_USER.email : session ? 'demo@branch.io' : null;
 
   let theme: 'light' | 'dark' = 'light';
 
-  if (email) {
+  if (demoMode) {
+    theme = DEMO_USER.settings.theme;
+  } else if (email && prisma) {
     const user = await prisma.user.findUnique({
       where: { email },
       include: { settings: true },
