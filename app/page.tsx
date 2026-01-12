@@ -13,7 +13,7 @@ export default async function LandingPage() {
 
   // Otherwise show a simple landing page
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+    <main className="min-h-screen flex items-center justify-center bg-[var(--branch-teal)] p-6">
       <div className="w-full max-w-md rounded-2xl border bg-white p-6 space-y-4">
         <h1 className="text-2xl font-semibold text-gray-900">Branch Dashboard</h1>
         <p className="text-sm text-gray-600">Demo landing page. Login to access the dashboard.</p>

@@ -2,10 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Link as LinkIcon, Megaphone, BarChart3, Settings } from 'lucide-react';
 
-export type NavItem = { href: string; label: string };
+export type NavItem = { href: string; label: string; icon: SVGSVGElement | null };
 
-export function SidebarNav({ items }: { items: NavItem[] }) {
+const navItems = [
+  { href: '/overview', label: 'Overview', icon: LayoutDashboard },
+  { href: '/links', label: 'Links', icon: LinkIcon },
+  { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/settings', label: 'Settings', icon: Settings },
+];
+
+export function SidebarNav() {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -15,7 +24,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
 
   return (
     <nav className="p-3 space-y-1">
-      {items.map(item => {
+      {navItems.map(item => {
         const active = isActive(item.href);
 
         return (
@@ -26,12 +35,15 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
               'block rounded-lg px-3 py-2 text-sm transition',
               'hover:bg-muted',
               active
-                ? 'bg-muted text-foreground font-medium ring-1 ring-border'
+                ? 'bg-background text-foreground font-medium ring-1 ring-border'
                 : 'text-muted-foreground',
             ].join(' ')}
             aria-current={active ? 'page' : undefined}
           >
-            {item.label}
+            <div className="flex items-center">
+              {item.icon && <item.icon className="mr-2 h-4 w-4" aria-hidden="true" />}
+              {item.label}
+            </div>
           </Link>
         );
       })}

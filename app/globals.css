@@ -47,23 +47,24 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --color-button: var(--button);
+  --background: var(--branch-n1);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: #0074df;
+
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
@@ -84,22 +85,55 @@
   --sidebar-ring: oklch(0.708 0 0);
   --button: #4dd4ff;
   --button-disabled: #e4e7f5;
+
+  /* Branch neutrals (hex) */
+  --branch-n1: #f4f6fc;
+  --branch-n2: #e4e7f5;
+  --branch-n3: #bcc0d4;
+  --branch-n4: #7c829f;
+  --branch-n5: #4c5478;
+  --branch-n6: #1f2852;
+
+  /* Branch brand (hex) */
+  --branch-blue: #0074df;
+  --branch-teal: #00dfdb;
+  --branch-purple: #6700e2;
+
+  /* Semantic tokens */
+  --background: var(--branch-n1);
+  --foreground: var(--branch-n6);
+
+  --card: #ffffff;
+  --card-foreground: var(--branch-n6);
+
+  --muted: var(--branch-n2);
+  --muted-foreground: var(--branch-n5);
+
+  --border: var(--branch-n2);
+  --input: var(--branch-n2);
+
+  --primary: var(--branch-blue);
+  --primary-foreground: #ffffff;
+
+  --accent: var(--branch-teal);
+  --accent-foreground: var(--branch-n6);
+
+  --ring: var(--branch-blue);
 }
 
 .dark {
-  --background: #0074df;
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
+
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: #0074df;
@@ -120,6 +154,27 @@
   --sidebar-ring: oklch(0.556 0 0);
   --button: #e200cf;
   --button-disabled: #e4e7f5;
+
+  /* Dark mode tuned to keep Branch feel without neon overload */
+  --background: 18 24 40; /* deep slate-ish */
+  --foreground: 244 246 252; /* n1 */
+
+  --card: 24 32 56;
+  --card-foreground: 244 246 252;
+
+  --muted: 31 40 82; /* n6 */
+  --muted-foreground: 188 192 212; /* n3 */
+
+  --border: 31 40 82;
+  --input: 31 40 82;
+
+  --primary: var(--branch-blue);
+  --primary-foreground: 255 255 255;
+
+  --accent: var(--branch-teal);
+  --accent-foreground: 18 24 40;
+
+  --ring: var(--branch-teal);
 }
 
 @layer base {

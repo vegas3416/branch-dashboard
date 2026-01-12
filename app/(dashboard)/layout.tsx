@@ -3,18 +3,10 @@
 import { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { LogoutButton } from '@/components/LogoutButton';
 import { SidebarNav } from '@/components/SidebarNav';
 import Image from 'next/image';
 import Link from 'next/link';
-
-const navItems = [
-  { href: '/overview', label: 'Overview' },
-  { href: '/links', label: 'Links' },
-  { href: '/campaigns', label: 'Campaigns' },
-  { href: '/analytics', label: 'Analytics' },
-  { href: '/settings', label: 'Settings' },
-];
+import ProfileMenu from '@/components/ProfileMenu';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   // Next.js cookies() is async in newer App Router builds
@@ -57,7 +49,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </Link>
             </div>
 
-            <SidebarNav items={navItems} />
+            <SidebarNav />
 
             <div className="mt-auto p-3">
               <div
@@ -95,7 +87,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   />
                 </div>
 
-                <LogoutButton />
+                <ProfileMenu />
               </div>
             </header>
 
