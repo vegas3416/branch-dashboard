@@ -2,13 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Providers from './providers';
-import { Raleway } from 'next/font/google';
-
-const raleway = Raleway({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-});
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
