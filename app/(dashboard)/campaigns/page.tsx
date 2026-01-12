@@ -2,6 +2,15 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from '@tanstack/react-table';
 
 type CampaignStatus = 'active' | 'paused' | 'draft';
 type Channel = 'paid' | 'organic' | 'referral';
@@ -91,15 +100,12 @@ function cn(...classes: Array<string | false | undefined | null>) {
 function formatNumber(n: number) {
   return new Intl.NumberFormat('en-US').format(n);
 }
-
 function formatPct(v: number) {
   return `${(v * 100).toFixed(1)}%`;
 }
-
 function formatMoney(v: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 }
-
 function formatRelative(iso: string) {
   const dt = new Date(iso);
   const diffMs = Date.now() - dt.getTime();
@@ -149,33 +155,79 @@ function ChannelBadge({ channel }: { channel: Channel }) {
   );
 }
 
-function SortHeader({
-  label,
-  active,
-  dir,
-  onClick,
+function ColumnsMenu({
+  visibility,
+  setVisibility,
+  columns,
 }: {
-  label: string;
-  active: boolean;
-  dir: 'asc' | 'desc';
-  onClick: () => void;
+  visibility: VisibilityState;
+  setVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
+  columns: Array<{ id: string; label: string; lock?: boolean }>;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1 hover:text-slate-900',
-        active ? 'text-slate-900' : 'text-slate-600'
-      )}
-    >
-      <span>{label}</span>
-      {active ? (
-        <span className="text-[11px] leading-none">{dir === 'asc' ? '▲' : '▼'}</span>
-      ) : (
-        <span className="text-[11px] leading-none opacity-30">↕</span>
-      )}
-    </button>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="h-10 rounded-lg bg-white px-3 text-sm font-medium text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
+      >
+        Columns
+      </button>
+
+      {open ? (
+        <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl bg-white p-2 shadow-lg ring-1 ring-slate-200">
+          <div className="px-2 py-1 text-xs font-medium text-slate-600">Toggle columns</div>
+          <div className="mt-1 space-y-1">
+            {columns.map(c => {
+              const checked = visibility[c.id] ?? true;
+              return (
+                <label
+                  key={c.id}
+                  className={cn(
+                    'flex cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50',
+                    c.lock && 'opacity-60 cursor-not-allowed'
+                  )}
+                >
+                  <span className="text-slate-800">{c.label}</span>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={c.lock}
+                    onChange={e => {
+                      const next = e.target.checked;
+                      setVisibility(prev => ({ ...prev, [c.id]: next }));
+                    }}
+                  />
+                </label>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 flex gap-2 px-2 pb-1">
+            <button
+              type="button"
+              className="flex-1 rounded-lg bg-slate-900 px-2 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+              onClick={() => {
+                const allOn: VisibilityState = {};
+                columns.forEach(c => (allOn[c.id] = true));
+                setVisibility(allOn);
+              }}
+            >
+              Show all
+            </button>
+            <button
+              type="button"
+              className="flex-1 rounded-lg bg-white px-2 py-1.5 text-xs font-medium text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
+              onClick={() => setOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -185,15 +237,16 @@ export default function CampaignsPage() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Campaign | null>(null);
 
-  const [sortKey, setSortKey] = useState<
-    'name' | 'status' | 'channel' | 'clicks' | 'installs' | 'ctr' | 'cpi' | 'updatedAt'
-  >('clicks');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  // TanStack state
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'clicks', desc: true }]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    // you can set defaults here, e.g. hide description:
+    // description: false,
+  });
 
-  const filtered = useMemo(() => {
+  const data = useMemo(() => {
     const q = query.trim().toLowerCase();
-
-    const base = MOCK_CAMPAIGNS.filter(c => {
+    return MOCK_CAMPAIGNS.filter(c => {
       if (status !== 'all' && c.status !== status) return false;
       if (!q) return true;
       return (
@@ -202,67 +255,125 @@ export default function CampaignsPage() {
         c.status.toLowerCase().includes(q)
       );
     });
-
-    const sorted = [...base].sort((a, b) => {
-      const mul = sortDir === 'asc' ? 1 : -1;
-
-      const get = (c: Campaign) => {
-        switch (sortKey) {
-          case 'name':
-            return c.name.toLowerCase();
-          case 'status':
-            return c.status;
-          case 'channel':
-            return c.channel;
-          case 'clicks':
-            return c.clicks;
-          case 'installs':
-            return c.installs;
-          case 'ctr':
-            return c.ctr;
-          case 'cpi':
-            return c.cpi;
-          case 'updatedAt':
-            return new Date(c.updatedAt).getTime();
-          default:
-            return 0;
-        }
-      };
-
-      const va = get(a) as any;
-      const vb = get(b) as any;
-
-      if (typeof va === 'string' && typeof vb === 'string') return va.localeCompare(vb) * mul;
-      return (va - vb) * mul;
-    });
-
-    return sorted;
-  }, [query, status, sortKey, sortDir]);
+  }, [query, status]);
 
   const stats = useMemo(() => {
-    const total = filtered.length;
-    const activeCount = filtered.filter(c => c.status === 'active').length;
-    const clicks = filtered.reduce((sum, c) => sum + c.clicks, 0);
-    const installs = filtered.reduce((sum, c) => sum + c.installs, 0);
+    const total = data.length;
+    const activeCount = data.filter(c => c.status === 'active').length;
+    const clicks = data.reduce((sum, c) => sum + c.clicks, 0);
+    const installs = data.reduce((sum, c) => sum + c.installs, 0);
 
-    // weighted ctr by clicks (avoid misleading average)
-    const ctr = clicks > 0 ? filtered.reduce((sum, c) => sum + c.ctr * c.clicks, 0) / clicks : 0;
-
-    // weighted cpi by installs
-    const cpi =
-      installs > 0 ? filtered.reduce((sum, c) => sum + c.cpi * c.installs, 0) / installs : 0;
+    const ctr = clicks > 0 ? data.reduce((sum, c) => sum + c.ctr * c.clicks, 0) / clicks : 0;
+    const cpi = installs > 0 ? data.reduce((sum, c) => sum + c.cpi * c.installs, 0) / installs : 0;
 
     return { total, activeCount, clicks, installs, ctr, cpi };
-  }, [filtered]);
+  }, [data]);
 
-  function toggleSort(nextKey: typeof sortKey) {
-    if (sortKey === nextKey) {
-      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(nextKey);
-      setSortDir('desc');
-    }
-  }
+  const columns = useMemo<ColumnDef<Campaign>[]>(() => {
+    return [
+      {
+        id: 'name',
+        header: 'Campaign',
+        accessorKey: 'name',
+        cell: ({ row }) => {
+          const c = row.original;
+          const underperforming = c.ctr < 0.06 && c.status === 'active';
+          return (
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="font-medium text-slate-900">{c.name}</div>
+                {underperforming ? (
+                  <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200">
+                    Low CTR
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-0.5 text-xs text-slate-500">{c.description ?? '—'}</div>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        accessorKey: 'status',
+        cell: ({ getValue }) => <StatusBadge status={getValue() as CampaignStatus} />,
+      },
+      {
+        id: 'channel',
+        header: 'Channel',
+        accessorKey: 'channel',
+        cell: ({ getValue }) => <ChannelBadge channel={getValue() as Channel} />,
+      },
+      {
+        id: 'clicks',
+        header: 'Clicks',
+        accessorKey: 'clicks',
+        cell: ({ getValue }) => (
+          <span className="tabular-nums">{formatNumber(getValue() as number)}</span>
+        ),
+        meta: { align: 'right' as const },
+      },
+      {
+        id: 'installs',
+        header: 'Installs',
+        accessorKey: 'installs',
+        cell: ({ getValue }) => (
+          <span className="tabular-nums">{formatNumber(getValue() as number)}</span>
+        ),
+        meta: { align: 'right' as const },
+      },
+      {
+        id: 'ctr',
+        header: 'CTR',
+        accessorKey: 'ctr',
+        cell: ({ getValue }) => (
+          <span className="tabular-nums">{formatPct(getValue() as number)}</span>
+        ),
+        meta: { align: 'right' as const },
+      },
+      {
+        id: 'cpi',
+        header: 'CPI',
+        accessorKey: 'cpi',
+        cell: ({ getValue }) => (
+          <span className="tabular-nums">{formatMoney(getValue() as number)}</span>
+        ),
+        meta: { align: 'right' as const },
+      },
+      {
+        id: 'updatedAt',
+        header: 'Updated',
+        accessorKey: 'updatedAt',
+        cell: ({ getValue }) => (
+          <span className="text-slate-600">{formatRelative(getValue() as string)}</span>
+        ),
+        meta: { align: 'right' as const },
+      },
+    ];
+  }, []);
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting, columnVisibility },
+    onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    // If you later add pagination/filtering models, you extend here.
+  });
+
+  const columnToggleList = [
+    { id: 'name', label: 'Campaign', lock: true }, // keep at least one column visible
+    { id: 'status', label: 'Status' },
+    { id: 'channel', label: 'Channel' },
+    { id: 'clicks', label: 'Clicks' },
+    { id: 'installs', label: 'Installs' },
+    { id: 'ctr', label: 'CTR' },
+    { id: 'cpi', label: 'CPI' },
+    { id: 'updatedAt', label: 'Updated' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -317,13 +428,16 @@ export default function CampaignsPage() {
             className="h-10 w-full min-w-[220px] rounded-lg bg-white px-3 text-sm text-slate-900 ring-1 ring-slate-200 placeholder:text-slate-400 focus:outline-none md:w-[280px]"
           />
 
+          <ColumnsMenu
+            visibility={columnVisibility}
+            setVisibility={setColumnVisibility}
+            columns={columnToggleList}
+          />
+
           <button
             type="button"
             className="h-10 rounded-lg bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
-            onClick={() => {
-              // keep as mock; you can wire later
-              alert('Demo: Create Campaign (not implemented)');
-            }}
+            onClick={() => alert('Demo: Create Campaign (not implemented)')}
           >
             Create Campaign
           </button>
@@ -364,129 +478,86 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* TanStack Table */}
       <div className="rounded-xl bg-white ring-1 ring-slate-200">
         <div className="flex items-center justify-between border-b border-slate-200 p-4">
           <div className="text-sm font-medium text-slate-900">Campaign List</div>
-          <div className="text-xs text-slate-500">{formatNumber(filtered.length)} results</div>
+          <div className="text-xs text-slate-500">
+            {formatNumber(table.getRowModel().rows.length)} results
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-[980px] w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs text-slate-600">
-              <tr>
-                <th className="px-4 py-3">
-                  <SortHeader
-                    label="Campaign"
-                    active={sortKey === 'name'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('name')}
-                  />
-                </th>
-                <th className="px-4 py-3">
-                  <SortHeader
-                    label="Status"
-                    active={sortKey === 'status'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('status')}
-                  />
-                </th>
-                <th className="px-4 py-3">
-                  <SortHeader
-                    label="Channel"
-                    active={sortKey === 'channel'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('channel')}
-                  />
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <SortHeader
-                    label="Clicks"
-                    active={sortKey === 'clicks'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('clicks')}
-                  />
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <SortHeader
-                    label="Installs"
-                    active={sortKey === 'installs'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('installs')}
-                  />
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <SortHeader
-                    label="CTR"
-                    active={sortKey === 'ctr'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('ctr')}
-                  />
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <SortHeader
-                    label="CPI"
-                    active={sortKey === 'cpi'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('cpi')}
-                  />
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <SortHeader
-                    label="Updated"
-                    active={sortKey === 'updatedAt'}
-                    dir={sortDir}
-                    onClick={() => toggleSort('updatedAt')}
-                  />
-                </th>
-              </tr>
+              {table.getHeaderGroups().map(hg => (
+                <tr key={hg.id}>
+                  {hg.headers.map(header => {
+                    const canSort = header.column.getCanSort();
+                    const isSorted = header.column.getIsSorted(); // 'asc' | 'desc' | false
+
+                    const metaAlign = (header.column.columnDef.meta as any)?.align as
+                      | 'right'
+                      | undefined;
+
+                    return (
+                      <th
+                        key={header.id}
+                        className={cn('px-4 py-3', metaAlign === 'right' && 'text-right')}
+                      >
+                        {header.isPlaceholder ? null : (
+                          <button
+                            type="button"
+                            onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                            className={cn(
+                              'inline-flex items-center gap-1',
+                              canSort ? 'hover:text-slate-900' : 'cursor-default',
+                              isSorted ? 'text-slate-900' : 'text-slate-600'
+                            )}
+                          >
+                            <span>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                            </span>
+                            {canSort ? (
+                              <span className="text-[11px] leading-none">
+                                {isSorted === 'asc' ? '▲' : isSorted === 'desc' ? '▼' : '↕'}
+                              </span>
+                            ) : null}
+                          </button>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              ))}
             </thead>
 
             <tbody className="divide-y divide-slate-200">
-              {filtered.map(c => {
-                const underperforming = c.ctr < 0.06 && c.status === 'active';
-                return (
-                  <tr
-                    key={c.id}
-                    className="cursor-pointer hover:bg-slate-50"
-                    onClick={() => setSelected(c)}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium text-slate-900">{c.name}</div>
-                        {underperforming ? (
-                          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200">
-                            Low CTR
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="mt-0.5 text-xs text-slate-500">{c.description ?? '—'}</div>
-                    </td>
+              {table.getRowModel().rows.map(row => (
+                <tr
+                  key={row.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => setSelected(row.original)}
+                >
+                  {row.getVisibleCells().map(cell => {
+                    const metaAlign = (cell.column.columnDef.meta as any)?.align as
+                      | 'right'
+                      | undefined;
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cn('px-4 py-3', metaAlign === 'right' && 'text-right')}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
 
-                    <td className="px-4 py-3">
-                      <StatusBadge status={c.status} />
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <ChannelBadge channel={c.channel} />
-                    </td>
-
-                    <td className="px-4 py-3 text-right tabular-nums">{formatNumber(c.clicks)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">
-                      {formatNumber(c.installs)}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{formatPct(c.ctr)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{formatMoney(c.cpi)}</td>
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      {formatRelative(c.updatedAt)}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {filtered.length === 0 ? (
+              {table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-10 text-center text-sm text-slate-600" colSpan={8}>
+                  <td className="px-4 py-10 text-center text-sm text-slate-600" colSpan={99}>
                     No campaigns match your filters.
                   </td>
                 </tr>
@@ -504,7 +575,6 @@ export default function CampaignsPage() {
         )}
         aria-hidden={!selected}
       >
-        {/* Backdrop */}
         <div
           className={cn(
             'absolute inset-0 bg-black/30 transition-opacity',
@@ -512,8 +582,6 @@ export default function CampaignsPage() {
           )}
           onClick={() => setSelected(null)}
         />
-
-        {/* Panel */}
         <div
           className={cn(
             'absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transition-transform',
@@ -596,7 +664,7 @@ export default function CampaignsPage() {
                 ) : (
                   <li>• CPI is within a healthy range for this channel.</li>
                 )}
-                <li>• Click row items to drill into details (mock drawer).</li>
+                <li>• Table is TanStack-driven (dynamic columns + sorting).</li>
               </ul>
             </div>
 
