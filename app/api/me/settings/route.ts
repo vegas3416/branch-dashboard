@@ -1,35 +1,28 @@
-// app/api/me/settings/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
 
 type Theme = 'light' | 'dark';
 
 export async function PATCH(req: Request) {
-  const session = (await cookies()).get('session')?.value;
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const demoMode = process.env.DEMO_MODE === 'true';
+  const body = (await req.json().catch(() => null)) as { theme?: Theme } | null;
+
+  const nextTheme = body?.theme;
+  if (nextTheme !== 'light' && nextTheme !== 'dark') {
+    return NextResponse.json({ error: 'Invalid theme' }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as Partial<{ theme: Theme }>;
-  const theme = body.theme;
-
-  if (theme !== 'light' && theme !== 'dark') {
-    return NextResponse.json({ error: "Invalid theme. Use 'light' or 'dark'." }, { status: 400 });
+  if (demoMode) {
+    // No DB in demo mode: pretend we saved it
+    return NextResponse.json({
+      ok: true,
+      settings: { theme: nextTheme },
+    });
   }
 
-  const email = 'demo@branch.io';
+  // Non-demo: update in Prisma
+  // Example skeleton:
+  // await prisma.userSettings.update({ ... })
+  // return NextResponse.json({ ok: true, settings: { theme: nextTheme } });
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  const settings = await prisma.userSettings.upsert({
-    where: { userId: user.id },
-    update: { theme },
-    create: { userId: user.id, theme },
-  });
-
-  return NextResponse.json({ settings });
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
 }

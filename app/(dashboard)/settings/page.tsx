@@ -99,7 +99,7 @@ export default function SettingsPage() {
 
   if (!data) return null;
 
-  const theme = data.settings.theme;
+  const theme = data?.settings?.theme ?? 'light';
 
   return (
     <div className="space-y-6">
